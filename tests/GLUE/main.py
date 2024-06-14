@@ -39,19 +39,29 @@ def random_seed(seed: int = 48763):
     torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
 
-def tokenize_function(examples):
+def tokenize_function_sst2(examples):
     tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-cased")
     return tokenizer(examples['sentence'], padding="max_length", truncation=True)
 
-def data_preprocessing(dataset:Dataset):
-    tokenized_datasets = dataset.map(tokenize_function, batched=True)
+def tokenize_function_mrpc(examples):
+    tokenizer = AutoTokenizer.from_pretrained("google-bert/bert-base-cased")
+    return tokenizer(examples['sentence1'], examples['sentence2'], padding="max_length", truncation=True)
+
+
+def data_preprocessing(dataset:Dataset, args:argparse.Namespace):
+    if args.dataset == "sst2":
+        tokenized_datasets = dataset.map(tokenize_function_sst2, batched=True)
+    elif args.dataset == "mrpc":
+        tokenized_datasets = dataset.map(tokenize_function_mrpc, batched=True)
+    else:
+        raise ValueError(f"The dataset {args.dataset} is not supported.")
     tokenized_datasets = tokenized_datasets.rename_column("label", "labels")
     tokenized_datasets.set_format(type='torch', columns=['input_ids', 'attention_mask', 'labels'])
 
     train_dataset = tokenized_datasets['train']
     val_dataset = tokenized_datasets['validation']
     test_dataset = tokenized_datasets['test']
-    batch_size = 16
+    batch_size = 32
 
     train_dataloader = DataLoader(
         dataset=train_dataset,
@@ -164,17 +174,24 @@ if __name__ == "__main__":
         help="The Learning Rate.",
     )
 
+    parser.add_argument(
+        "-d",
+        "--dataset",
+        type=str,
+        help="The Name of GLUE Dataset.",
+    )
+
     args = parser.parse_args()
 
     random_seed(seed=args.seed)
     os.environ['CUDA_VISIBLE_DEVICES']='1'
 
-    dataset = load_dataset('glue', 'sst2')
+    dataset = load_dataset('glue', args.dataset)
     model_id = "google-bert/bert-base-cased"
     model = AutoModelForSequenceClassification.from_pretrained(model_id)
 
     train_dataloader, val_dataloader, test_dataloader = \
-        data_preprocessing(dataset=dataset)
+        data_preprocessing(dataset=dataset, args=args)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("device: ", device)
@@ -230,15 +247,15 @@ if __name__ == "__main__":
     print("min train_losses: ", min(train_losses))
     print("min val_losses: ", min(val_losses))
 
-    if not os.path.exists("outputs/GLUE/sst2"):
-        os.makedirs("outputs/GLUE/sst2")
+    if not os.path.exists("outputs/GLUE/mrpc"):
+        os.makedirs("outputs/GLUE/mrpc")
 
     plt.plot(train_batch_len, train_losses, "r", label="Train Loss")
     plt.xlabel("Batches")
     plt.ylabel("Loss")
     plt.title("Training and Validation Loss")
     plt.legend()
-    plt.savefig(f"outputs/GLUE/sst2/{args.optimizer}_train_loss_{args.learning_rate}.png")
+    plt.savefig(f"outputs/GLUE/mrpc/{args.optimizer}_train_loss_{args.learning_rate}.png")
     plt.clf()
 
     plt.plot(val_batch_len, val_losses, "b", label="Validation Loss")
@@ -246,7 +263,7 @@ if __name__ == "__main__":
     plt.ylabel("Loss")
     plt.title("Training and Validation Loss")
     plt.legend()
-    plt.savefig(f"outputs/GLUE/sst2/{args.optimizer}_val_loss_{args.learning_rate}.png")
+    plt.savefig(f"outputs/GLUE/mrpc/{args.optimizer}_val_loss_{args.learning_rate}.png")
     plt.clf()
 
     train_accs = [acc for sublist in all_res for acc in sublist[3]]
@@ -256,17 +273,17 @@ if __name__ == "__main__":
     print("best val_accs: ", max(val_accs))
 
     plt.plot(train_batch_len, train_accs, "r", label="Train Accuracy")
-    plt.xlabel("Epochs")
+    plt.xlabel("Batches")
     plt.ylabel("Accuracy")
     plt.title("Training and Validation Accuracy")
     plt.legend()
-    plt.savefig(f"outputs/GLUE/sst2/{args.optimizer}_train_acc_{args.learning_rate}.png")
+    plt.savefig(f"outputs/GLUE/mrpc/{args.optimizer}_train_acc_{args.learning_rate}.png")
     plt.clf()
 
     plt.plot(val_batch_len, val_accs, "b", label="Validation Accuracy")
-    plt.xlabel("Epochs")
+    plt.xlabel("Batches")
     plt.ylabel("Accuracy")
     plt.title("Training and Validation Accuracy")
     plt.legend()
-    plt.savefig(f"outputs/GLUE/sst2/{args.optimizer}_val_acc_{args.learning_rate}.png")
+    plt.savefig(f"outputs/GLUE/mrpc/{args.optimizer}_val_acc_{args.learning_rate}.png")
     plt.clf()

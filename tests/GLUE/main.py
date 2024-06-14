@@ -230,6 +230,9 @@ if __name__ == "__main__":
     print("min train_losses: ", min(train_losses))
     print("min val_losses: ", min(val_losses))
 
+    if not os.path.exists("outputs/GLUE/sst2"):
+        os.makedirs("outputs/GLUE/sst2")
+
     plt.plot(train_batch_len, train_losses, "r", label="Train Loss")
     plt.xlabel("Batches")
     plt.ylabel("Loss")

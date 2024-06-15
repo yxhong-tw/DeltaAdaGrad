@@ -158,7 +158,7 @@ class CustomMLP(nn.Module):
 def train_once(
     train_dataloader: DataLoader,
     model: CustomMLP,
-    optimizer,
+    optimizer: torch.optim.Optimizer,
 ):
     total_loss = 0
     total_acc = 0

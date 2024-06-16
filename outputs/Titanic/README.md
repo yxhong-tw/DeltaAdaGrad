@@ -4,5 +4,6 @@
 - Learning Rate: 0.001
 - Run Time
     - Device: NVIDIA GeForce RTX 3090
-    - Adam: 149 seconds
-    - DeltaAdaGrad: 173 seconds
+    - AdaGrad: 63 seconds
+    - Adam: 64 seconds
+    - DeltaAdaGrad: 75 seconds

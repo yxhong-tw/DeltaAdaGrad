@@ -1,4 +1,4 @@
-# GLUE Cola
+# GLUE CoLA
 
 - Epochs: 10
 - Learning Rate: 0.001

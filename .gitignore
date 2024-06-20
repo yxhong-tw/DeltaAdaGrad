@@ -1,2 +1,5 @@
 __pycache__
 tests/DCaPI/data
+tests/Cat_Dog_Panda/animals
+tests/Cat_Dog_Panda/input
+tests/Cat_Dog_Panda/_pycache
